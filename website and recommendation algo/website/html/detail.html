@@ -1,0 +1,866 @@
+{% extends "base.html" %}
+{% load static %}
+{% load custom_filters %} 
+
+{% block content %}
+
+<style>
+/* ========== MOVIE DETAIL - NEON CINEMA STYLE ========== */
+
+/* Backdrop Glow Effect */
+.backdrop-glow {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 70vh;
+    background-image: url('{{ movie.backdrop_full_url }}');
+    background-size: cover;
+    background-position: center top;
+    filter: blur(40px) brightness(0.3);
+    opacity: 0.6;
+    z-index: -1;
+    pointer-events: none;
+}
+
+.backdrop-glow::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 100%;
+    background: linear-gradient(to bottom, transparent 0%, var(--bg-primary) 100%);
+}
+
+/* Movie Header */
+.movie-header-wrapper {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 40px;
+    margin-bottom: 40px;
+    align-items: flex-start;
+    background: var(--glass-bg);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--glass-border);
+    padding: 30px;
+    border-radius: 20px;
+    position: relative;
+    z-index: 1;
+}
+
+.header-poster {
+    flex: 0 0 280px;
+    width: 280px;
+}
+
+.header-poster img {
+    width: 100%;
+    height: auto;
+    border-radius: 16px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5), 0 0 60px rgba(0, 242, 255, 0.1);
+}
+
+.header-content {
+    flex: 1;
+    min-width: 300px;
+}
+
+/* Movie Title with Glowing Rating */
+.movie-title {
+    font-size: 2.8rem;
+    font-weight: 800;
+    margin-bottom: 16px;
+    line-height: 1.1;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.title-rating {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+.title-rating.high {
+    background: rgba(0, 242, 255, 0.15);
+    color: var(--accent-cyan);
+    box-shadow: 0 0 20px rgba(0, 242, 255, 0.5);
+    border: 2px solid rgba(0, 242, 255, 0.4);
+}
+
+.title-rating.mid {
+    background: rgba(112, 0, 255, 0.15);
+    color: #A855F7;
+    box-shadow: 0 0 20px rgba(112, 0, 255, 0.5);
+    border: 2px solid rgba(112, 0, 255, 0.4);
+}
+
+.title-rating.low {
+    background: rgba(248, 81, 73, 0.15);
+    color: #F85149;
+    border: 2px solid rgba(248, 81, 73, 0.4);
+}
+
+/* Meta Row */
+.meta-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 24px;
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+}
+
+.certification-badge {
+    border: 1px solid var(--accent-cyan);
+    padding: 2px 10px;
+    border-radius: 4px;
+    color: var(--accent-cyan);
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+/* Floating Action Buttons Row */
+.action-buttons {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin: 28px 0;
+}
+
+.fab-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 12px 24px;
+    border-radius: 50px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    text-decoration: none;
+}
+
+.fab-like {
+    background: linear-gradient(135deg, #00F2FF 0%, #00D4E0 100%);
+    color: #0B0E14;
+}
+
+.fab-like:hover {
+    box-shadow: 0 0 30px rgba(0, 242, 255, 0.5);
+    transform: translateY(-2px);
+    color: #0B0E14;
+}
+
+.fab-like.active {
+    background: linear-gradient(135deg, #00F2FF 0%, #00D4E0 100%);
+    box-shadow: 0 0 30px rgba(0, 242, 255, 0.6);
+}
+
+.fab-watchlist {
+    background: transparent;
+    border: 2px solid var(--accent-purple);
+    color: #A855F7;
+}
+
+.fab-watchlist:hover {
+    background: rgba(112, 0, 255, 0.15);
+    box-shadow: 0 0 30px rgba(112, 0, 255, 0.4);
+    transform: translateY(-2px);
+    color: #A855F7;
+}
+
+.fab-watchlist.active {
+    background: linear-gradient(135deg, #7000FF 0%, #9333EA 100%);
+    color: white;
+    border-color: transparent;
+}
+
+.fab-trailer {
+    background: linear-gradient(135deg, #F85149 0%, #DA3633 100%);
+    color: white;
+}
+
+.fab-trailer:hover {
+    box-shadow: 0 0 30px rgba(248, 81, 73, 0.5);
+    transform: translateY(-2px);
+    color: white;
+}
+
+/* Tagline */
+.tagline {
+    font-style: italic;
+    color: var(--text-secondary);
+    margin-bottom: 20px;
+    font-size: 1.15rem;
+    padding-left: 16px;
+    border-left: 3px solid var(--accent-cyan);
+}
+
+/* Section Headers */
+.detail-section-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 20px;
+    position: relative;
+    display: inline-block;
+}
+
+.detail-section-title::after {
+    content: '';
+    position: absolute;
+    bottom: -6px;
+    left: 0;
+    width: 40px;
+    height: 3px;
+    background: var(--accent-gradient);
+    border-radius: 2px;
+}
+
+/* Overview */
+.overview-text {
+    color: var(--text-secondary);
+    line-height: 1.8;
+    font-size: 1rem;
+}
+
+/* Director */
+.director-label {
+    color: var(--accent-cyan);
+    font-weight: 600;
+}
+
+/* Page Grid */
+.page-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 40px;
+    position: relative;
+    z-index: 1;
+}
+
+.left-column {
+    flex: 3;
+    min-width: 300px;
+}
+
+.right-sidebar {
+    flex: 1;
+    min-width: 240px;
+}
+
+/* Glass Section */
+.glass-section {
+    background: var(--glass-bg);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 24px;
+}
+
+/* Cast Scroller */
+.cast-scroller {
+    display: flex;
+    overflow-x: auto;
+    gap: 16px;
+    padding-bottom: 16px;
+    scrollbar-width: thin;
+}
+
+.cast-card {
+    min-width: 120px;
+    max-width: 120px;
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--bg-card);
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.cast-card:hover {
+    border-color: var(--accent-cyan);
+    transform: translateY(-4px);
+    box-shadow: var(--glow-cyan);
+}
+
+.cast-card img {
+    width: 100%;
+    height: 140px;
+    object-fit: cover;
+    background-color: var(--bg-card);
+}
+
+.cast-text {
+    padding: 10px 8px;
+}
+
+.cast-name {
+    font-weight: 600;
+    font-size: 0.8rem;
+    display: block;
+    color: var(--text-primary);
+}
+
+.cast-character {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    display: block;
+    margin-top: 2px;
+    line-height: 1.3;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Sidebar Widgets */
+.sidebar-widget {
+    background: var(--glass-bg);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+}
+
+.sidebar-label {
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    display: block;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.sidebar-value {
+    color: var(--text-primary);
+    font-size: 1rem;
+    font-weight: 500;
+}
+
+/* Social Links */
+.social-links a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--bg-card);
+    color: var(--text-primary);
+    transition: all 0.3s ease;
+    margin-right: 8px;
+}
+
+.social-links a:hover {
+    background: var(--accent-cyan);
+    color: var(--bg-primary);
+    box-shadow: var(--glow-cyan);
+}
+
+/* Review Section */
+.review-form-container {
+    background: var(--glass-bg);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    padding: 24px;
+    margin-top: 20px;
+}
+
+.review-card {
+    background: var(--bg-card);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+}
+
+.review-author {
+    color: var(--accent-cyan);
+    font-weight: 600;
+}
+
+.review-date {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+.review-rating-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    background: rgba(0, 242, 255, 0.15);
+    color: var(--accent-cyan);
+    border: 1px solid rgba(0, 242, 255, 0.3);
+}
+
+.review-stars {
+    color: var(--accent-cyan);
+    margin-left: 12px;
+}
+
+.review-text {
+    color: var(--text-secondary);
+    line-height: 1.7;
+    margin-top: 12px;
+}
+
+/* Media Section */
+.embed-responsive {
+    position: relative;
+    height: 0;
+    padding-bottom: 56.25%;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.embed-responsive iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.image-thumb {
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.image-thumb:hover {
+    transform: scale(1.05);
+    box-shadow: var(--glow-cyan);
+}
+
+/* Similar Movies Section */
+.similar-movies-section {
+    margin-top: 48px;
+    position: relative;
+    z-index: 1;
+}
+
+/* Horizontal Divider */
+.neon-divider {
+    border: none;
+    height: 1px;
+    background: linear-gradient(to right, transparent 0%, var(--glass-border) 20%, var(--glass-border) 80%, transparent 100%);
+    margin: 32px 0;
+}
+</style>
+
+<!-- Backdrop Glow Effect -->
+<div class="backdrop-glow"></div>
+
+<div class="movie-header-wrapper">
+    <div class="header-poster">
+        <img src="{{ movie.poster_full_url }}" alt="{{ movie.title }}">
+    </div>
+
+    <div class="header-content">
+        <h1 class="movie-title">
+            {{ movie.title }}
+            {% if movie.vote_average >= 7.5 %}
+            <span class="title-rating high">{{ movie.vote_average|floatformat:1 }}</span>
+            {% elif movie.vote_average >= 5.0 %}
+            <span class="title-rating mid">{{ movie.vote_average|floatformat:1 }}</span>
+            {% else %}
+            <span class="title-rating low">{{ movie.vote_average|floatformat:1 }}</span>
+            {% endif %}
+        </h1>
+
+        <div class="meta-row">
+            <span class="certification-badge">{{ certification }}</span>
+            <span>{{ movie.runtime }} min</span>
+            <span style="color: var(--text-muted);">•</span>
+            <span> 
+                {% for genre in movie.genres %}
+                    <span class="pill-tag">{% if genre.name %}{{ genre.name }}{% else %}{{ genre }}{% endif %}</span>
+                {% endfor %}
+            </span>
+        </div>
+
+        <div class="action-buttons">
+            {% if request.user.is_authenticated %}
+                <form method="POST" action="{% url 'submit_interaction' %}" style="margin:0;">
+                    {% csrf_token %}
+                    <input type="hidden" name="movie_id" value="{{ movie.id }}">
+                    <button type="submit" name="like_submit" 
+                            class="fab-action fab-like {% if user_liked %}active{% endif %}"
+                            title="{% if user_liked %}Unlike{% else %}Like{% endif %}">
+                        <i class="fas fa-heart"></i>
+                        {% if user_liked %}Liked{% else %}Like{% endif %}
+                    </button>
+                </form>
+
+                <form method="POST" action="{% url 'submit_interaction' %}" style="margin:0;">
+                    {% csrf_token %}
+                    <input type="hidden" name="movie_id" value="{{ movie.id }}">
+                    <button type="submit" name="watchlist_submit" 
+                            class="fab-action fab-watchlist {% if user_watched %}active{% endif %}"
+                            title="{% if user_watched %}Remove from Watchlist{% else %}Add to Watchlist{% endif %}">
+                        <i class="fas fa-bookmark"></i>
+                        {% if user_watched %}Saved{% else %}Watchlist{% endif %}
+                    </button>
+                </form>
+            {% else %}
+                <a href="{% url 'login' %}?next={{ request.path }}" class="fab-action fab-like">
+                    <i class="fas fa-heart"></i> Like
+                </a>
+                <a href="{% url 'login' %}?next={{ request.path }}" class="fab-action fab-watchlist">
+                    <i class="fas fa-bookmark"></i> Watchlist
+                </a>
+            {% endif %}
+
+            {% if trailer_key %}
+                <a href="https://www.youtube.com/watch?v={{ trailer_key }}" target="_blank" class="fab-action fab-trailer">
+                    <i class="fas fa-play"></i> Trailer
+                </a>
+            {% endif %}
+        </div>
+
+        {% if movie.tagline %}
+        <div class="tagline">"{{ movie.tagline }}"</div>
+        {% endif %}
+
+        <h3 class="detail-section-title">Overview</h3>
+        <p class="overview-text">{{ movie.overview }}</p>
+
+        {% if director %}
+            <p style="margin-top: 24px;">
+                <span class="director-label">Director:</span> 
+                <span style="color: var(--text-primary);">{{ director }}</span>
+            </p>
+        {% endif %}
+    </div>
+</div>
+
+<hr class="neon-divider">
+
+<div class="page-grid">
+    
+    <div class="left-column">
+        
+        <div class="glass-section">
+            <h3 class="detail-section-title">Top Billed Cast</h3>
+            <div class="cast-scroller">
+                {% for actor in cast %}
+                <div class="cast-card">
+                    {% if actor.profile_full_url %}
+                        <img src="{{ actor.profile_full_url }}" alt="{{ actor.name }}">
+                    {% else %}
+                        <img src="{% static 'placeholder_cast.png' %}" alt="No Image"> 
+                    {% endif %}
+                    
+                    <div class="cast-text">
+                        <span class="cast-name">{{ actor.name }}</span>
+                        {% if actor.character %}
+                            <span class="cast-character">{{ actor.character }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% empty %}
+                    <p style="color: var(--text-muted);">No cast information available.</p>
+                {% endfor %}
+            </div>
+            
+            <div style="margin-top: 16px;">
+                <a href="{% url 'movie_cast_detail' movie_id=movie.id %}" class="btn btn-outline-neon btn-sm">
+                    <i class="bi bi-people-fill me-1"></i> View Full Cast
+                </a>
+            </div>
+        </div>
+
+        <div class="glass-section">
+            <h3 class="detail-section-title">Media</h3>
+            
+            {% if media_videos or media_backdrops %}
+                
+                {% if media_videos %}
+                <h5 style="color: var(--text-primary); margin-bottom: 16px;">
+                    <i class="bi bi-play-circle me-2" style="color: var(--accent-cyan);"></i>Clips
+                </h5>
+                <div class="row mb-4">
+                    {% for video in media_videos|slice:":3" %} 
+                    <div class="col-md-4 mb-3">
+                        <div class="embed-responsive">
+                            <iframe src="https://www.youtube.com/embed/{{ video.key }}" 
+                                    frameborder="0"
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                                    allowfullscreen>
+                            </iframe>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                {% if media_backdrops %}
+                <h5 style="color: var(--text-primary); margin-bottom: 16px;">
+                    <i class="bi bi-images me-2" style="color: var(--accent-purple);"></i>Images ({{ media_backdrops|length }})
+                </h5>
+                <div class="row">
+                    {% for image in media_backdrops %} 
+                    <div class="col-4 col-md-2 mb-3">
+                        <a href="{{ image.full_url }}" target="_blank">
+                            <img src="{{ image.full_url }}" 
+                                 alt="Movie Still" 
+                                 class="img-fluid image-thumb" 
+                                 style="height: 80px; width: 100%; object-fit: cover;">
+                        </a>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+            {% else %}
+                <p style="color: var(--text-muted);">No additional media available for this movie.</p>
+            {% endif %}
+        </div>
+
+        <div class="glass-section" id="review-section">
+            <h3 class="detail-section-title">Reviews</h3>
+
+            {% if request.user.is_authenticated %}
+                <div class="review-form-container">
+                    <h5 style="color: var(--text-primary); margin-bottom: 16px;">
+                        <i class="bi bi-pencil-square me-2" style="color: var(--accent-cyan);"></i>
+                        {% if user_review %}Edit Your Review{% else %}Write a Review{% endif %}
+                    </h5>
+                    <form method="POST" action="{% url 'submit_interaction' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="movie_id" value="{{ movie.id }}">
+                        
+                        <div class="mb-3">
+                            <label style="display:block; margin-bottom:8px; color: var(--text-secondary);">Rating (1-10):</label>
+                            {{ review_form.rating }}
+                        </div>
+                        <div class="mb-3">
+                            <label style="display:block; margin-bottom:8px; color: var(--text-secondary);">Your Thoughts:</label>
+                            {{ review_form.text }} 
+                        </div>
+                        
+                        <button type="submit" name="review_submit" class="btn btn-neon">
+                            <i class="bi bi-send me-1"></i>
+                            {% if user_review %}Update Review{% else %}Submit Review{% endif %}
+                        </button>
+                    </form>
+                    
+                    {% if user_review %}
+                        <form method="POST" action="{% url 'submit_interaction' %}" style="margin-top: 12px;">
+                            {% csrf_token %}
+                            <input type="hidden" name="movie_id" value="{{ movie.id }}">
+                            <input type="hidden" name="review_id" value="{{ user_review.id }}">
+                            <button type="submit" name="review_delete" class="btn btn-sm" 
+                                    style="background: rgba(248, 81, 73, 0.15); color: #F85149; border: 1px solid rgba(248, 81, 73, 0.3);"
+                                    onclick="return confirm('Are you sure you want to delete your review?');">
+                                <i class="fas fa-trash"></i> Delete Review
+                            </button>
+                        </form>
+                    {% endif %}
+                </div>
+            {% else %}
+                <div style="display: flex; align-items: center; gap: 16px; margin: 24px 0;">
+                    <span style="color: var(--text-secondary);">Want to share your thoughts?</span>
+                    <a href="{% url 'login' %}?next={{ request.path }}" class="btn btn-outline-neon btn-sm">
+                        <i class="bi bi-box-arrow-in-right me-1"></i> Log in to Write a Review
+                    </a>
+                </div>
+            {% endif %}
+            
+            <div style="margin-top: 32px;">
+                {% if reviews %}
+                    <h5 style="color: var(--text-primary); margin-bottom: 20px;">
+                        <i class="bi bi-chat-quote me-2" style="color: var(--accent-purple);"></i>
+                        User Reviews ({{ reviews|length }})
+                    </h5>
+                    {% for review in reviews %}
+                    <div class="review-card">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                            <span style="color: var(--text-primary);">
+                                Reviewed by: <span class="review-author">{{ review.user.username }}</span>
+                            </span>
+                            <span class="review-date">{{ review.created_at|date:"F j, Y" }}</span>
+                        </div>
+                        
+                        <div style="display: flex; align-items: center; margin-bottom: 12px;">
+                            <span class="review-rating-badge">
+                                {{ review.rating }}/10
+                            </span>
+                            <span class="review-stars">
+                                {% for i in "1234567890"|make_list %}
+                                    {% if forloop.counter <= review.rating %}
+                                        <i class="fas fa-star"></i>
+                                    {% else %}
+                                        <i class="far fa-star" style="opacity: 0.3;"></i>
+                                    {% endif %}
+                                {% endfor %}
+                            </span>
+                        </div>
+
+                        {% if review.text %}
+                            <p class="review-text">{{ review.text }}</p>
+                        {% endif %}
+                        
+                        {% if request.user.is_authenticated and review.user == request.user and not user_review %}
+                        <form method="POST" action="{% url 'submit_interaction' %}" style="margin-top: 12px;">
+                            {% csrf_token %}
+                            <input type="hidden" name="movie_id" value="{{ movie.id }}">
+                            <input type="hidden" name="review_id" value="{{ review.id }}">
+                            <button type="submit" name="review_delete" class="btn btn-sm" 
+                                    style="background: rgba(248, 81, 73, 0.15); color: #F85149; border: 1px solid rgba(248, 81, 73, 0.3); padding: 4px 12px;"
+                                    onclick="return confirm('Delete this review?');">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p style="color: var(--text-muted);">No user reviews yet. Be the first to rate this movie!</p>
+                {% endif %}
+            </div>
+        </div>
+    </div> 
+
+    <div class="right-sidebar">
+        
+        <!-- Social Links -->
+    {% if links.homepage or links.twitter_id or links.facebook_id or links.instagram_id %}
+    <div class="sidebar-widget social-links" style="text-align: center;">
+        {% if links.homepage %}
+            <a href="{{ links.homepage }}" target="_blank" title="Official Website"><i class="fas fa-globe fa-lg"></i></a>
+        {% endif %}
+        {% if links.twitter_id %}
+            <a href="https://twitter.com/{{ links.twitter_id }}" target="_blank" title="X/Twitter"><i class="fab fa-x-twitter fa-lg"></i></a>
+        {% endif %}
+        {% if links.facebook_id %}
+            <a href="https://facebook.com/{{ links.facebook_id }}" target="_blank" title="Facebook"><i class="fab fa-facebook fa-lg"></i></a>
+        {% endif %}
+        {% if links.instagram_id %}
+            <a href="https://instagram.com/{{ links.instagram_id }}" target="_blank" title="Instagram"><i class="fab fa-instagram fa-lg"></i></a>
+        {% endif %}
+    </div>
+    {% endif %}
+
+        <div class="sidebar-widget">
+            <span class="sidebar-label"><i class="bi bi-translate me-2"></i>Original Language</span>
+            <span class="sidebar-value">{{ full_language_name }}</span>
+        </div>
+
+        <div class="sidebar-widget">
+            <span class="sidebar-label"><i class="bi bi-calendar-event me-2"></i>Release Date</span>
+            <span class="sidebar-value">
+                {% if movie.release_date %}
+                    {{ movie.release_date }}
+                {% else %}
+                    --
+                {% endif %}
+            </span>
+        </div>
+
+        <div class="sidebar-widget">
+            <span class="sidebar-label"><i class="bi bi-cash-stack me-2"></i>Budget</span>
+            <span class="sidebar-value">
+                {% if movie.budget and movie.budget > 0 %}
+                    ${{ movie.budget|comma_format }}
+                {% else %}
+                    --
+                {% endif %}
+            </span>
+        </div>
+
+        <div class="sidebar-widget">
+            <span class="sidebar-label"><i class="bi bi-graph-up-arrow me-2"></i>Revenue</span>
+            <span class="sidebar-value">
+                {% if movie.revenue and movie.revenue > 0 %}
+                    ${{ movie.revenue|comma_format }}
+                {% else %}
+                    --
+                {% endif %}
+            </span>
+        </div>
+
+        <div class="sidebar-widget">
+            <span class="sidebar-label"><i class="bi bi-tags me-2"></i>Keywords</span>
+            <div style="margin-top: 10px;">
+                {% if movie.keywords %}
+                    {% for keyword in movie.keywords %}
+                        {% if keyword.name %}
+                            <span class="pill-tag" style="font-size: 0.75rem; padding: 4px 10px;">{{ keyword.name }}</span>
+                        {% elif keyword %}
+                            <span class="pill-tag" style="font-size: 0.75rem; padding: 4px 10px;">{{ keyword }}</span>
+                        {% endif %}
+                    {% endfor %}
+                {% else %}
+                    <span style="color: var(--text-muted);">--</span>
+                {% endif %}
+            </div>
+        </div>
+
+    </div> 
+</div>
+
+
+{% if similar_movies %}
+<div class="similar-movies-section">
+    <h2 class="section-title" style="margin-bottom: 28px;">
+        <i class="bi bi-film me-2" style="color: var(--accent-purple);"></i>Similar Movies
+    </h2>
+    
+    <div class="row">
+        {% for sim_movie in similar_movies|slice:":6" %}
+            <div class="col-6 col-md-4 col-lg-2 mb-4">
+                <a href="{% url 'movie_detail' movie_id=sim_movie.tmdb_id %}" class="movie-card-link">
+                    <div class="movie-card">
+                        <div class="movie-poster-container">
+                            <img src="{{ sim_movie.poster_full_url }}" 
+                                 alt="{{ sim_movie.title }}"
+                                 style="height: 260px;"
+                                 onerror="this.onerror=null;this.src='{% static 'placeholder.png' %}';">
+                        </div>
+                        <div class="card-body">
+                            <h6 class="card-title text-truncate">{{ sim_movie.title }}</h6>
+                            {% if sim_movie.vote_average >= 7.5 %}
+                            <span class="rating-badge rating-high">
+                                <i class="bi bi-star-fill me-1"></i>{{ sim_movie.vote_average|floatformat:1 }}
+                            </span>
+                            {% elif sim_movie.vote_average >= 5.0 %}
+                            <span class="rating-badge rating-mid">
+                                <i class="bi bi-star-fill me-1"></i>{{ sim_movie.vote_average|floatformat:1 }}
+                            </span>
+                            {% else %}
+                            <span class="rating-badge rating-low">
+                                <i class="bi bi-star-fill me-1"></i>{{ sim_movie.vote_average|floatformat:1 }}
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </a>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+{% endblock content %}

@@ -1,0 +1,275 @@
+{% extends 'base.html' %} 
+{% load static %}
+
+{% block title %}Search Results{% endblock %}
+
+{% block content %}
+
+<style>
+    .search-header h1 {
+        font-size: 2.2rem;
+        font-weight: 700;
+        background: var(--accent-gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        display: inline-block;
+        margin-bottom: 8px;
+    }
+    
+    .search-subtitle {
+        color: var(--text-secondary);
+        font-size: 1rem;
+    }
+    
+    .movies-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: 24px;
+        margin-top: 24px;
+    }
+    
+    .movie-card-link {
+        text-decoration: none;
+        display: block;
+    }
+    
+    .movie-poster-container {
+        position: relative;
+        overflow: hidden;
+        border-radius: 12px 12px 0 0;
+    }
+    
+    .movie-poster-container::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 60%;
+        background: linear-gradient(to top, var(--bg-card) 0%, transparent 100%);
+        pointer-events: none;
+    }
+    
+    .movie-year {
+        color: var(--text-muted);
+        font-size: 0.8rem;
+    }
+    
+    .search-alert {
+        background: var(--glass-bg);
+        backdrop-filter: blur(12px);
+        border: 1px solid var(--glass-border);
+        border-radius: 16px;
+        padding: 32px;
+        text-align: center;
+        margin-top: 40px;
+    }
+    
+    .search-alert h5 {
+        color: var(--text-primary);
+        margin-bottom: 12px;
+    }
+    
+    .search-alert p {
+        color: var(--text-secondary);
+        margin-bottom: 8px;
+    }
+</style>
+
+<div class="search-header mb-4">
+    <h1>Search Results</h1>
+</div>
+
+<!-- Title Search: Show selected movie + recommendations side by side -->
+{% if search_type == 'title' and selected_movie %}
+<div class="mt-4">
+    <p class="search-subtitle mb-4">
+        <i class="bi bi-film me-2" style="color: var(--accent-cyan);"></i>
+        Selected: <strong style="color: var(--text-primary);">{{ selected_movie.title }}</strong> + Recommendations
+    </p>
+    
+    <div class="movies-grid">
+        <!-- Selected Movie -->
+        <div>
+            <a href="{% url 'movie_detail' movie_id=selected_movie.id %}" class="movie-card-link">
+                <div class="movie-card" style="border: 2px solid var(--accent-cyan); box-shadow: var(--glow-cyan);">
+                    <div class="movie-poster-container">
+                        <img src="{{ selected_movie.poster_full_url }}"
+                             alt="{{ selected_movie.title }}"
+                             onerror="this.onerror=null;this.src='{% static 'placeholder.png' %}';">
+                    </div>
+                    <div class="card-body">
+                        <h6 class="card-title text-truncate">{{ selected_movie.title }}</h6>
+                        {% if selected_movie.release_date %}
+                        <p class="movie-year mb-1">({{ selected_movie.release_date|date:"Y" }})</p>
+                        {% endif %}
+                        {% if selected_movie.vote_average >= 7.5 %}
+                        <span class="rating-badge rating-high">
+                            <i class="bi bi-star-fill me-1"></i>{{ selected_movie.vote_average|floatformat:1 }}
+                        </span>
+                        {% elif selected_movie.vote_average >= 5.0 %}
+                        <span class="rating-badge rating-mid">
+                            <i class="bi bi-star-fill me-1"></i>{{ selected_movie.vote_average|floatformat:1 }}
+                        </span>
+                        {% else %}
+                        <span class="rating-badge rating-low">
+                            <i class="bi bi-star-fill me-1"></i>{{ selected_movie.vote_average|floatformat:1 }}
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <!-- Recommendations -->
+        {% for movie in recommendations %}
+        <div>
+            <a href="{% url 'movie_detail' movie_id=movie.id %}" class="movie-card-link">
+                <div class="movie-card">
+                    <div class="movie-poster-container">
+                        <img src="{{ movie.poster_full_url }}"
+                             alt="{{ movie.title }}"
+                             onerror="this.onerror=null;this.src='{% static 'placeholder.png' %}';">
+                    </div>
+                    <div class="card-body">
+                        <h6 class="card-title text-truncate">{{ movie.title }}</h6>
+                        {% if movie.release_date %}
+                        <p class="movie-year mb-1">({{ movie.release_date|date:"Y" }})</p>
+                        {% endif %}
+                        {% if movie.vote_average >= 7.5 %}
+                        <span class="rating-badge rating-high">
+                            <i class="bi bi-star-fill me-1"></i>{{ movie.vote_average|floatformat:1 }}
+                        </span>
+                        {% elif movie.vote_average >= 5.0 %}
+                        <span class="rating-badge rating-mid">
+                            <i class="bi bi-star-fill me-1"></i>{{ movie.vote_average|floatformat:1 }}
+                        </span>
+                        {% else %}
+                        <span class="rating-badge rating-low">
+                            <i class="bi bi-star-fill me-1"></i>{{ movie.vote_average|floatformat:1 }}
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Search results dropdown (before selection) -->
+{% elif search_type == 'title' and search_results and not selected_movie %}
+<div class="mt-4">
+    <p class="search-subtitle mb-4">
+        <i class="bi bi-hand-index me-2" style="color: var(--accent-purple);"></i>
+        Please select a movie:
+    </p>
+    
+    <div class="movies-grid">
+        {% for movie in search_results %}
+        <div>
+            <a href="{% url 'search' %}?query={{ query }}&type=title&selected={{ movie.id }}" class="movie-card-link">
+                <div class="movie-card">
+                    <div class="movie-poster-container">
+                        <img src="{{ movie.poster_full_url }}"
+                             alt="{{ movie.title }}"
+                             onerror="this.onerror=null;this.src='{% static 'placeholder.png' %}';">
+                    </div>
+                    <div class="card-body">
+                        <h6 class="card-title text-truncate">{{ movie.title }}</h6>
+                        {% if movie.release_date %}
+                        <p class="movie-year mb-1">({{ movie.release_date|date:"Y" }})</p>
+                        {% endif %}
+                        {% if movie.vote_average >= 7.5 %}
+                        <span class="rating-badge rating-high">
+                            <i class="bi bi-star-fill me-1"></i>{{ movie.vote_average|floatformat:1 }}
+                        </span>
+                        {% elif movie.vote_average >= 5.0 %}
+                        <span class="rating-badge rating-mid">
+                            <i class="bi bi-star-fill me-1"></i>{{ movie.vote_average|floatformat:1 }}
+                        </span>
+                        {% else %}
+                        <span class="rating-badge rating-low">
+                            <i class="bi bi-star-fill me-1"></i>{{ movie.vote_average|floatformat:1 }}
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Director, Actor, or Genre Search Results -->
+{% elif search_results and search_type != 'title' %}
+<div class="mt-4">
+    <p class="search-subtitle mb-4">
+        {% if search_type == 'director' %}
+        <i class="bi bi-megaphone me-2" style="color: var(--accent-cyan);"></i>
+        Results for Director:
+        {% elif search_type == 'actor' %}
+        <i class="bi bi-person-video3 me-2" style="color: var(--accent-cyan);"></i>
+        Results for Actor:
+        {% else %}
+        <i class="bi bi-collection me-2" style="color: var(--accent-cyan);"></i>
+        Results for Genre:
+        {% endif %}
+        <strong style="color: var(--accent-purple);">"{{ query }}"</strong>
+    </p>
+    
+    <div class="movies-grid">
+        {% for movie in search_results %}
+        <div>
+            <a href="{% url 'movie_detail' movie_id=movie.id %}" class="movie-card-link">
+                <div class="movie-card">
+                    <div class="movie-poster-container">
+                        <img src="{{ movie.poster_full_url }}"
+                             alt="{{ movie.title }}"
+                             onerror="this.onerror=null;this.src='{% static 'placeholder.png' %}';">
+                    </div>
+                    <div class="card-body">
+                        <h6 class="card-title text-truncate">{{ movie.title }}</h6>
+                        {% if movie.release_date %}
+                        <p class="movie-year mb-1">({{ movie.release_date|date:"Y" }})</p>
+                        {% endif %}
+                        {% if movie.vote_average >= 7.5 %}
+                        <span class="rating-badge rating-high">
+                            <i class="bi bi-star-fill me-1"></i>{{ movie.vote_average|floatformat:1 }}
+                        </span>
+                        {% elif movie.vote_average >= 5.0 %}
+                        <span class="rating-badge rating-mid">
+                            <i class="bi bi-star-fill me-1"></i>{{ movie.vote_average|floatformat:1 }}
+                        </span>
+                        {% else %}
+                        <span class="rating-badge rating-low">
+                            <i class="bi bi-star-fill me-1"></i>{{ movie.vote_average|floatformat:1 }}
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- No Results -->
+{% elif query and not search_results %}
+<div class="search-alert">
+    <i class="bi bi-search" style="font-size: 3rem; color: var(--text-muted);"></i>
+    <h5 class="mt-3">No results found for "{{ query }}"</h5>
+    <p>Searching by: <span class="pill-tag">{{ search_type|title }}</span></p>
+    <p>Try a different search term or filter type.</p>
+</div>
+
+<!-- Initial Search Page -->
+{% else %}
+<div class="search-alert">
+    <i class="bi bi-film" style="font-size: 3rem; color: var(--accent-cyan);"></i>
+    <h5 class="mt-3">Start Searching</h5>
+    <p>Use the search bar above to find movies by Title, Actor, Director, or Genre.</p>
+</div>
+{% endif %}
+
+{% endblock %}

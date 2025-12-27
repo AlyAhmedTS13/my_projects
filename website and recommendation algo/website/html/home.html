@@ -1,0 +1,167 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+
+<style>
+    /* Home page specific styles */
+    .page-header {
+        margin-bottom: 32px;
+    }
+    
+    .page-header h1 {
+        font-size: 2.2rem;
+        font-weight: 700;
+        background: var(--accent-gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        display: inline-block;
+    }
+    
+    .movies-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: 24px;
+    }
+    
+    .movie-card-wrapper {
+        position: relative;
+    }
+    
+    .movie-card-link {
+        text-decoration: none;
+        display: block;
+    }
+    
+    .movie-poster-container {
+        position: relative;
+        overflow: hidden;
+        border-radius: 12px 12px 0 0;
+    }
+    
+    .movie-poster-container::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 60%;
+        background: linear-gradient(to top, var(--bg-card) 0%, transparent 100%);
+        pointer-events: none;
+    }
+    
+    .for-you-alert {
+        background: var(--glass-bg);
+        backdrop-filter: blur(12px);
+        border: 1px solid var(--accent-purple);
+        border-radius: 16px;
+        padding: 24px 32px;
+        margin-bottom: 32px;
+    }
+    
+    .for-you-alert p {
+        color: var(--text-primary);
+        font-size: 1.1rem;
+        margin: 0;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: var(--text-secondary);
+    }
+</style>
+
+<!-- PAGE HEADER -->
+<div class="page-header">
+    <h1>{{ page_title }}</h1>
+</div>
+
+{% if current_filter == 'for_you' %}
+
+    {% if recommendation_message %}
+    <div class="for-you-alert">
+        <p><i class="bi bi-stars me-2" style="color: var(--accent-purple);"></i>{{ recommendation_message }}</p>
+    </div>
+    {% endif %}
+
+    <!-- Recommended Movies Grid -->
+    {% if movies %}
+    <div class="movies-grid">
+        {% for movie in movies %}
+        <div class="movie-card-wrapper">
+            <a href="{% url 'movie_detail' movie_id=movie.id %}" class="movie-card-link">
+                <div class="movie-card">
+                    <div class="movie-poster-container">
+                        <img src="{{ movie.poster_full_url }}"
+                             alt="{{ movie.title }}"
+                             onerror="this.onerror=null;this.src='{% static 'placeholder.png' %}';">
+                    </div>
+                    <div class="card-body">
+                        <h6 class="card-title text-truncate">{{ movie.title }}</h6>
+                        {% if movie.vote_average >= 7.5 %}
+                        <span class="rating-badge rating-high">
+                            <i class="bi bi-star-fill me-1"></i>{{ movie.vote_average|floatformat:1 }}
+                        </span>
+                        {% elif movie.vote_average >= 5.0 %}
+                        <span class="rating-badge rating-mid">
+                            <i class="bi bi-star-fill me-1"></i>{{ movie.vote_average|floatformat:1 }}
+                        </span>
+                        {% else %}
+                        <span class="rating-badge rating-low">
+                            <i class="bi bi-star-fill me-1"></i>{{ movie.vote_average|floatformat:1 }}
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+{% else %}
+
+    <!-- Regular Movies Grid -->
+    <div class="movies-grid">
+        {% for movie in movies %}
+        <div class="movie-card-wrapper">
+            <a href="{% url 'movie_detail' movie_id=movie.id %}" class="movie-card-link">
+                <div class="movie-card">
+                    <div class="movie-poster-container">
+                        <img src="{{ movie.poster_full_url }}"
+                             alt="{{ movie.title }}"
+                             onerror="this.onerror=null;this.src='{% static 'placeholder.png' %}';">
+                    </div>
+                    <div class="card-body">
+                        <h6 class="card-title text-truncate">{{ movie.title }}</h6>
+                        {% if movie.vote_average >= 7.5 %}
+                        <span class="rating-badge rating-high">
+                            <i class="bi bi-star-fill me-1"></i>{{ movie.vote_average|floatformat:1 }}
+                        </span>
+                        {% elif movie.vote_average >= 5.0 %}
+                        <span class="rating-badge rating-mid">
+                            <i class="bi bi-star-fill me-1"></i>{{ movie.vote_average|floatformat:1 }}
+                        </span>
+                        {% else %}
+                        <span class="rating-badge rating-low">
+                            <i class="bi bi-star-fill me-1"></i>{{ movie.vote_average|floatformat:1 }}
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+            </a>
+        </div>
+        {% empty %}
+        <div class="empty-state col-12">
+            <i class="bi bi-film" style="font-size: 3rem; color: var(--text-muted);"></i>
+            <p class="mt-3">No movies found for this category right now.</p>
+        </div>
+        {% endfor %}
+    </div>
+
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+
+<style>
+    .watchlist-header h1 {
+        font-size: 2.2rem;
+        font-weight: 700;
+        background: var(--accent-gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        display: inline-block;
+    }
+    
+    .watchlist-count {
+        color: var(--text-secondary);
+        font-size: 1rem;
+        margin-top: 8px;
+    }
+    
+    .movies-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: 24px;
+        margin-top: 32px;
+    }
+    
+    .watchlist-card {
+        position: relative;
+    }
+    
+    .remove-btn {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        z-index: 10;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: rgba(248, 81, 73, 0.9);
+        border: none;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        backdrop-filter: blur(4px);
+    }
+    
+    .remove-btn:hover {
+        background: #F85149;
+        transform: scale(1.1);
+        box-shadow: 0 0 15px rgba(248, 81, 73, 0.5);
+    }
+    
+    .movie-poster-container {
+        position: relative;
+        overflow: hidden;
+        border-radius: 12px 12px 0 0;
+    }
+    
+    .movie-poster-container::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 60%;
+        background: linear-gradient(to top, var(--bg-card) 0%, transparent 100%);
+        pointer-events: none;
+    }
+    
+    .empty-watchlist {
+        background: var(--glass-bg);
+        backdrop-filter: blur(12px);
+        border: 1px solid var(--glass-border);
+        border-radius: 20px;
+        padding: 60px 40px;
+        text-align: center;
+        margin-top: 60px;
+    }
+    
+    .empty-watchlist h2 {
+        color: var(--text-primary);
+        margin-top: 20px;
+        font-weight: 700;
+    }
+    
+    .empty-watchlist p {
+        color: var(--text-secondary);
+        margin-bottom: 24px;
+    }
+</style>
+
+<div class="watchlist-header mb-4">
+    <h1><i class="bi bi-bookmark-heart-fill me-2"></i>{{ request.user.username }}'s Watchlist</h1>
+    <p class="watchlist-count">
+        {% if watchlist_movies|length > 0 %}
+            You have <strong style="color: var(--accent-cyan);">{{ watchlist_movies|length }}</strong> movie{% if watchlist_movies|length != 1 %}s{% endif %} saved
+        {% else %}
+            Movies you save will appear here
+        {% endif %}
+    </p>
+</div>
+
+{% if watchlist_movies %}
+    <div class="movies-grid">
+        {% for movie in watchlist_movies %}
+        <div class="watchlist-card">
+            <!-- Remove Button -->
+            <form method="POST" action="{% url 'remove_watchlist_item' %}">
+                {% csrf_token %}
+                <input type="hidden" name="watchlist_id" value="{{ movie.watchlist_db_id }}">
+                <input type="hidden" name="movie_id" value="{{ movie.id }}">
+                <button type="submit" class="remove-btn" title="Remove from Watchlist">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </form>
+            
+            <a href="{% url 'movie_detail' movie_id=movie.id %}" class="movie-card-link">
+                <div class="movie-card">
+                    <div class="movie-poster-container">
+                        <img src="{{ movie.poster_full_url }}" 
+                             alt="{{ movie.title }}"
+                             onerror="this.onerror=null;this.src='{% static 'placeholder.png' %}';">
+                    </div>
+                    <div class="card-body">
+                        <h6 class="card-title text-truncate">{{ movie.title }}</h6>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span style="color: var(--text-muted); font-size: 0.8rem;">
+                                {{ movie.release_date|default_if_none:"N/A"|date:"Y" }}
+                            </span>
+                            {% if movie.vote_average %}
+                                {% if movie.vote_average >= 7.5 %}
+                                <span class="rating-badge rating-high" style="font-size: 0.75rem; padding: 2px 8px;">
+                                    <i class="bi bi-star-fill me-1"></i>{{ movie.vote_average|floatformat:1 }}
+                                </span>
+                                {% elif movie.vote_average >= 5.0 %}
+                                <span class="rating-badge rating-mid" style="font-size: 0.75rem; padding: 2px 8px;">
+                                    <i class="bi bi-star-fill me-1"></i>{{ movie.vote_average|floatformat:1 }}
+                                </span>
+                                {% else %}
+                                <span class="rating-badge rating-low" style="font-size: 0.75rem; padding: 2px 8px;">
+                                    <i class="bi bi-star-fill me-1"></i>{{ movie.vote_average|floatformat:1 }}
+                                </span>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="empty-watchlist">
+        <i class="bi bi-film" style="font-size: 4rem; color: var(--accent-purple);"></i>
+        <h2>Your Watchlist is Empty!</h2>
+        <p>Ready to find something great? Start exploring our content now.</p>
+        <a href="{% url 'home' %}?filter=popular" class="btn btn-neon btn-lg">
+            <i class="bi bi-fire me-2"></i>Explore Popular Movies
+        </a>
+    </div>
+{% endif %}
+
+{% endblock %}
