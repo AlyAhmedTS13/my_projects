@@ -1,4 +1,4 @@
-# 🎬 CineMatch - Movie Recommendation System
+# 🎬 Kernals and Chill - Movie Recommendation System
 
 <div align="center">
 
@@ -38,9 +38,6 @@
    - [SQL Analysis](#sql-analysis)
    - [Power BI Visualizations](#power-bi-visualizations)
 8. [Database Schema](#-database-schema)
-9. [Project Structure](#-project-structure)
-10. [Setup & Installation](#-setup--installation)
-11. [Future Improvements](#-future-improvements)
 
 ---
 
