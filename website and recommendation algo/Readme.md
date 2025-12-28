@@ -1,4 +1,4 @@
-# 🎬 Kernals and Chill - Movie Recommendation System
+# 🎬 Kernels and Chill - Movie Recommendation System
 
 <div align="center">
 
