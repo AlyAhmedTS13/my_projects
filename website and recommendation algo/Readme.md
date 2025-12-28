@@ -43,7 +43,7 @@
 
 ## 🎯 Project Overview
 
-CineMatch is an end-to-end movie recommendation system that combines:
+Kernels and Chill is an end-to-end movie recommendation system that combines:
 
 - **Data Engineering**: Collecting and processing 95,000+ movies from multiple sources
 - **Machine Learning**: Content-based filtering using TF-IDF and K-Nearest Neighbors
